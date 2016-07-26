@@ -32,6 +32,7 @@ struct proxydef childdef = {NULL, 0, 0, S_NOSERVICE, ""};
 
 #ifndef _WIN32
 char *chrootp = NULL;
+static pthread_attr_t pa;
 #endif
 char * curconf = NULL;
 
@@ -142,14 +143,14 @@ int start_proxy_thread(struct child * chp){
 	conf.threadinit = 1;
 #ifdef _WIN32
 #ifndef _WINCE
-	h = (HANDLE)_beginthreadex((LPSECURITY_ATTRIBUTES )NULL, 16384, startsrv, (void *) chp, (DWORD)0, &thread);
+	h = (HANDLE)_beginthreadex((LPSECURITY_ATTRIBUTES )NULL, 16384+conf.stacksize, (void *)startsrv, (void *) chp, (DWORD)0, &thread);
 #else
-	h = (HANDLE)CreateThread((LPSECURITY_ATTRIBUTES )NULL, 16384, startsrv, (void *) chp, (DWORD)0, &thread);
+	h = (HANDLE)CreateThread((LPSECURITY_ATTRIBUTES )NULL, 16384+conf.stacksize, (void *)startsrv, (void *) chp, (DWORD)0, &thread);
 #endif
 	if(h)CloseHandle(h);
 #else
 	pthread_attr_init(&pa);
-	pthread_attr_setstacksize(&pa,PTHREAD_STACK_MIN + 16384);
+	pthread_attr_setstacksize(&pa,PTHREAD_STACK_MIN + (16384+conf.stacksize));
 	pthread_attr_setdetachstate(&pa,PTHREAD_CREATE_DETACHED);
 	pthread_create(&thread, &pa, startsrv, (void *)chp);
 #endif
@@ -271,9 +272,11 @@ static int h_external(int argc, unsigned char ** argv){
 	int res;
 #ifndef NOIPV6
 	struct sockaddr_in6 sa6;
+	memset(&sa6, 0, sizeof(sa6));
 	res = getip46(46, argv[1], (struct sockaddr *)&sa6);
 	if(!res) return 1; 
-	memcpy((*SAFAMILY(&sa6)==AF_INET)?(void *)&conf.extsa:(void *)&conf.extsa6, &sa6, SASIZE(&sa6)); 
+	if (*SAFAMILY(&sa6)==AF_INET) conf.extsa = sa6;
+	else conf.extsa6 = sa6;
 #else
 	res = getip46(46, argv[1], (struct sockaddr *)&conf.extsa);
 	if(!res) return 1; 
@@ -282,6 +285,7 @@ static int h_external(int argc, unsigned char ** argv){
 }
 
 static int h_log(int argc, unsigned char ** argv){ 
+	unsigned char tmpbuf[8192];
 	conf.logfunc = logstdout;
 	if(conf.logtarget){
 		myfree(conf.logtarget);
@@ -314,14 +318,12 @@ static int h_log(int argc, unsigned char ** argv){
 			conf.logname = (unsigned char *)mystrdup((char *)argv[1]);
 			fp = fopen((char *)dologname (tmpbuf, conf.logname, NULL, conf.logtype, conf.logtime), "a");
 			if(!fp){
-				perror("fopen()");
+				perror(tmpbuf);
 				return 1;
 			}
 			else {
-				pthread_mutex_lock(&log_mutex);
 				if(conf.stdlog)fclose(conf.stdlog);
 				conf.stdlog = fp;
-				pthread_mutex_unlock(&log_mutex);
 #ifdef _WINCE
 				freopen(tmpbuf, "w", stdout);
 				freopen(tmpbuf, "w", stderr);
@@ -329,6 +331,22 @@ static int h_log(int argc, unsigned char ** argv){
 			}
 		}
 	}
+	return 0;
+}
+
+static int h_stacksize(int argc, unsigned char **argv){
+	conf.stacksize = atoi((char *)argv[1]);
+	return 0;
+}
+
+
+static int h_force(int argc, unsigned char **argv){
+	conf.noforce = 0;
+	return 0;
+}
+
+static int h_noforce(int argc, unsigned char **argv){
+	conf.noforce = 1;
 	return 0;
 }
 
@@ -387,17 +405,22 @@ static int h_counter(int argc, unsigned char **argv){
 			fprintf(stderr, "Not a counter file %s, line %d\n", argv[1], linenum);
 			return 2;
 		}
-#ifdef  _MSC_VER
 #ifdef _TIME64_T_DEFINED
-#ifndef _MAX__TIME64_T
-#define _MAX__TIME64_T     0x793406fffi64
+#ifdef _MAX__TIME64_T
+#define MAX_COUNTER_TIME (_MAX__TIME64_T)
+#elif defined (MAX__TIME64_T)
+#define MAX_COUNTER_TIME (MAX__TIME64_T)
+#else
+#define MAX_COUNTER_TIME (0x793406fff)
 #endif 
+#else
+#define MAX_COUNTER_TIME ((sizeof(time_t)>4)?(time_t)0x793406fff:(time_t)0x7fffffff)
 #endif
-		if(ch1.updated >= _MAX__TIME64_T){
+
+		if(ch1.updated < 0 || ch1.updated >= MAX_COUNTER_TIME){
 			fprintf(stderr, "Invalid or corrupted counter file %s. Use countersutil utility to convert from older version\n", argv[1]);
 			return 3;
 		}
-#endif
 		cheader.updated = ch1.updated;
 	}
 	if(argc >=4) {
@@ -540,8 +563,8 @@ static int h_nserver(int argc, unsigned char **argv){
 	if(numservers < MAXNSERVERS) {
 		if((str = strchr((char *)argv[1], '/')))
 			*str = 0;
-		if(!getip46(46, argv[1], (struct sockaddr *)&nservers[numservers].addr)) return 1;
 		*SAPORT(&nservers[numservers].addr) = htons(53);
+		if(parsehost(46, argv[1], (struct sockaddr *)&nservers[numservers].addr)) return 1;
 		if(str) {
 			nservers[numservers].usetcp = strstr(str + 1, "tcp")? 1:0;
 			*str = '/';
@@ -558,7 +581,7 @@ static int h_authnserver(int argc, unsigned char **argv){
 
 	if((str = strchr((char *)argv[1], '/')))
 		*str = 0;
-	if(!getip46(46, argv[1], (struct sockaddr *)&authnserver.addr)) return 1;
+	if(parsehost(46, argv[1], (struct sockaddr *)&authnserver.addr)) return 1;
 	*SAPORT(&authnserver.addr) = htons(53);
 	if(str) {
 		authnserver.usetcp = strstr(str + 1, "tcp")? 1:0;
@@ -704,7 +727,8 @@ static int h_parent(int argc, unsigned char **argv){
 	else if(!strcmp((char *)argv[2], "ftp"))chains->type = R_FTP;
 	else if(!strcmp((char *)argv[2], "admin"))chains->type = R_ADMIN;
 	else if(!strcmp((char *)argv[2], "icq"))chains->type = R_ICQ;
-	else if(!strcmp((char *)argv[2], "msn"))chains->type = R_MSN;
+	else if(!strcmp((char *)argv[2], "extip"))chains->type = R_EXTIP;
+	else if(!strcmp((char *)argv[2], "smtp"))chains->type = R_SMTP;
 	else {
 		fprintf(stderr, "Chaining error: bad chain type (%s)\n", argv[2]);
 		return(4);
@@ -726,7 +750,7 @@ static int h_nolog(int argc, unsigned char **argv){
 		return(1);
 	}
 	while(acl->next) acl = acl->next;
-	if(!strcmp(argv[0],"nolog")) acl->nolog = 1;
+	if(!strcmp((char *)argv[0],"nolog")) acl->nolog = 1;
 	else acl->weight = atoi((char*)argv[1]);
 	return 0;
 }
@@ -739,14 +763,14 @@ int scanipl(unsigned char *arg, struct iplist *dst){
 #endif
         char * slash, *dash;
 	int masklen, addrlen;
-	if((slash = strchr(arg, '/'))) *slash = 0;
-	if((dash = strchr(arg,'-'))) *dash = 0;
+	if((slash = strchr((char *)arg, '/'))) *slash = 0;
+	if((dash = strchr((char *)arg,'-'))) *dash = 0;
 	
 	if(!getip46(46, arg, (struct sockaddr *)&sa)) return 1;
 	memcpy(&dst->ip_from, SAADDR(&sa), SAADDRLEN(&sa));
 	dst->family = *SAFAMILY(&sa);
 	if(dash){
-		if(!getip46(46, dash+1, (struct sockaddr *)&sa)) return 2;
+		if(!getip46(46, (unsigned char *)dash+1, (struct sockaddr *)&sa)) return 2;
 		memcpy(&dst->ip_to, SAADDR(&sa), SAADDRLEN(&sa));
 		if(*SAFAMILY(&sa) != dst->family || memcmp(&dst->ip_to, &dst->ip_from, SAADDRLEN(&sa)) < 0) return 3;
 		return 0;
@@ -1190,12 +1214,10 @@ static int h_ace(int argc, unsigned char **argv){
 				tl->traf64 = crecord.traf64;
 				tl->cleared = crecord.cleared;
 				tl->updated = crecord.updated;
-#ifdef _MAX__TIME64_T
-				if(tl->cleared >=  _MAX__TIME64_T || tl->updated >=  _MAX__TIME64_T){
-					fprintf(stderr, "Invalid or corrupted counter file. Use countersutil utility to convert from older version\n");
+				if(tl->cleared < 0 || tl->cleared >=  MAX_COUNTER_TIME || tl->updated < 0 || tl->updated >=  MAX_COUNTER_TIME){
+					fprintf(stderr, "Invalid, incompatible or corrupted counter file.\n");
 					return(6);
 				}
-#endif
 			}
 		}
 		pthread_mutex_lock(&tc_mutex);
@@ -1253,7 +1275,7 @@ static int h_plugin(int argc, unsigned char **argv){
 #ifdef _WINCE
 	hi = LoadLibraryW((LPCWSTR)CEToUnicode(argv[1]));
 #else
-	hi = LoadLibrary(argv[1]);
+	hi = LoadLibrary((char *)argv[1]);
 #endif
 	if(!hi) {
 		fprintf(stderr, "Failed to load %s, code %d\n", argv[1], (int)GetLastError());
@@ -1262,7 +1284,7 @@ static int h_plugin(int argc, unsigned char **argv){
 #ifdef _WINCE
 	fp = GetProcAddressW(hi, (LPCWSTR)CEToUnicode(argv[2]));
 #else
-	fp = GetProcAddress(hi, argv[2]);
+	fp = GetProcAddress(hi, (char *)argv[2]);
 #endif
 	if(!fp) {
 		printf("%s not found in %s, code: %d\n", argv[2], argv[1], (int)GetLastError());
@@ -1284,7 +1306,7 @@ static int h_plugin(int argc, unsigned char **argv){
 static int h_setuid(int argc, unsigned char **argv){
   int res;
 	res = atoi((char *)argv[1]);
-	if(!res || setuid(res)) {
+	if(!res || setreuid(res,res)) {
 		fprintf(stderr, "Unable to set uid %d", res);
 		return(1);
 	}
@@ -1295,7 +1317,7 @@ static int h_setgid(int argc, unsigned char **argv){
   int res;
 
 	res = atoi((char *)argv[1]);
-	if(!res || setgid(res)) {
+	if(!res || setregid(res,res)) {
 		fprintf(stderr, "Unable to set gid %d", res);
 		return(1);
 	}
@@ -1389,6 +1411,9 @@ struct commands commandhandlers[]={
 	{commandhandlers+55, "msnpr", h_proxy, 4, 0},
 	{commandhandlers+56, "delimchar",h_delimchar, 2, 2},
 	{commandhandlers+57, "authnserver", h_authnserver, 2, 2},
+	{commandhandlers+58, "stacksize", h_stacksize, 2, 2},
+	{commandhandlers+59, "force", h_force, 1, 1},
+	{commandhandlers+60, "noforce", h_noforce, 1, 1},
 	{specificcommands, 	 "", h_noop, 1, 0}
 };
 
@@ -1676,6 +1701,7 @@ int reload (void){
 	fp = confopen();
 	if(fp){
 		error = readconfig(fp);
+		conf.version++;
 		if(error) {
 			 freeconf(&conf);
 		}

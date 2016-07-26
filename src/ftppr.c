@@ -70,13 +70,13 @@ void * ftpprchild(struct clientparam* param) {
 		param->res = res;
 		if(inbuf && inbuf != BUFSIZE && socksend(param->ctrlsock, buf, inbuf, conf.timeouts[STRING_S])!=inbuf) {RETURN (807);}
 		if(!res) status = 3;
-		sprintf((char *)buf, "%.64s@%.128s%c%hu", param->extusername, param->hostname, (ntohs(*SAPORT(&param->sinsr))==21)?0:':', ntohs(*SAPORT(&param->sinsr)));
+		sprintf((char *)buf, "%.128s@%.128s%c%hu", param->extusername, param->hostname, (ntohs(*SAPORT(&param->sinsr))==21)?0:':', ntohs(*SAPORT(&param->sinsr)));
 		req = mystrdup((char *)buf);
 #ifndef WITHMAIN
 		{
 			int action, reqbufsize, reqsize;
 			reqbufsize = BUFSIZE;
-			reqsize = (int)strlen(buf) + 1;
+			reqsize = (int)strlen((char *)buf) + 1;
 			
 			action = handlereqfilters(param, &buf, &reqbufsize, 0, &reqsize);
 			if(action == HANDLED){
@@ -94,7 +94,7 @@ void * ftpprchild(struct clientparam* param) {
 		{
 			int action, reqbufsize, reqsize;
 			reqbufsize = BUFSIZE;
-			reqsize = (int)strlen(buf) + 1;
+			reqsize = (int)strlen((char *)buf) + 1;
 			
 			action = handlehdrfilterscli(param, &buf, &reqbufsize, 0, &reqsize);
 			if(action == HANDLED){
@@ -119,11 +119,11 @@ void * ftpprchild(struct clientparam* param) {
 			clidatasock = INVALID_SOCKET;
 		}
 		if ((clidatasock=socket(SASOCK(&param->sincl), SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {RETURN(821);}
-		sasize = sizeof(param->sincl);
 		*SAPORT(&param->sincl) = 0;
-		if(so._bind(clidatasock, (struct sockaddr *)&param->sincl, sasize)){RETURN(822);}
+		if(so._bind(clidatasock, (struct sockaddr *)&param->sincl, SASIZE(&param->sincl))){RETURN(822);}
 		if (pasv) {
 			if(so._listen(clidatasock, 1)) {RETURN(823);}
+			sasize = sizeof(param->sincl);
 			if(so._getsockname(clidatasock, (struct sockaddr *)&param->sincl, &sasize)){RETURN(824);}
 			if(*SAFAMILY(&param->sincl) == AF_INET)
 				sprintf((char *)buf, "227 OK (%u,%u,%u,%u,%u,%u)\r\n",
@@ -145,19 +145,18 @@ void * ftpprchild(struct clientparam* param) {
 
 			if(sscanf((char *)buf+5, "%lu,%lu,%lu,%lu,%hu,%hu", &b1, &b2, &b3, &b4, &b5, &b6)!=6) {RETURN(828);}
 			*SAPORT(&param->sincr) = htons((unsigned short)((b5<<8)^b6));
-			sasize = sizeof(param->sincr);
-			if(so._connect(clidatasock, (struct sockaddr *)&param->sincr, sasize)) {
+			if(so._connect(clidatasock, (struct sockaddr *)&param->sincr, SASIZE(&param->sincr))) {
 				so._closesocket(clidatasock);
 				clidatasock = INVALID_SOCKET;
 				RETURN(826);
 			}
-			sprintf(buf, "200 OK\r\n");
+			sprintf((char *)buf, "200 OK\r\n");
 		}
 #ifndef WITHMAIN
 		{
 			int action, reqbufsize, reqsize;
 			reqbufsize = BUFSIZE;
-			reqsize = (int)strlen(buf) + 1;
+			reqsize = (int)strlen((char *)buf) + 1;
 			
 			action = handlehdrfilterssrv(param, &buf, &reqbufsize, 0, &reqsize);
 			if(action == HANDLED){
@@ -185,7 +184,7 @@ void * ftpprchild(struct clientparam* param) {
 		{
 			int action, reqbufsize, reqsize;
 			reqbufsize = BUFSIZE;
-			reqsize = (int)strlen(buf) + 1;
+			reqsize = (int)strlen((char *)buf) + 1;
 			
 			action = handlehdrfilterscli(param, &buf, &reqbufsize, 0, &reqsize);
 			if(action == HANDLED){
@@ -240,8 +239,8 @@ void * ftpprchild(struct clientparam* param) {
 		}
 		sc = param->remsock;
 		param->remsock = ss;
-		so._setsockopt(param->remsock, SOL_SOCKET, SO_LINGER, (unsigned char *)&lg, sizeof(lg));
-		so._setsockopt(clidatasock, SOL_SOCKET, SO_LINGER, (unsigned char *)&lg, sizeof(lg));
+		so._setsockopt(param->remsock, SOL_SOCKET, SO_LINGER, (char *)&lg, sizeof(lg));
+		so._setsockopt(clidatasock, SOL_SOCKET, SO_LINGER, (char *)&lg, sizeof(lg));
 		param->clisock = clidatasock;
 		res = sockmap(param, conf.timeouts[CONNECTION_S]);
 		if(param->remsock != INVALID_SOCKET) {

@@ -1,4 +1,4 @@
-.TH ftppr "8" "July 2009" "3proxy 0.7" "Universal proxy server"
+.TH ftppr "8" "January 2016" "3proxy 0.8" "Universal proxy server"
 .SH NAME
 .B ftppr
 \- FTP proxy gateway service
@@ -51,6 +51,10 @@ is specified logging is to file. Under Unix, if
 preceeds
 .IR logfile ,
 syslog is used for logging.
+.TP
+.B -S
+Increase or decrease stack size. You may want to try something like -S8192 if you experience 3proxy
+crashes.
 .SH CLIENTS
 You can use any FTP client, regardless of FTP proxy support. For client with
 FTP proxy support configure
@@ -73,13 +77,11 @@ is user\'s login on this FTP server. Login itself may contain \'@\' sign.
 Only cleartext authentication is currently supported.
 .SH BUGS
 Report all bugs to
-.BR 3proxy@security.nnov.ru
+.BR 3proxy@3proxy.ru
 .SH SEE ALSO
 3proxy(8), proxy(8), pop3p(8), socks(8), tcppm(8), udppm(8), syslogd(8),
 .br
 http://3proxy.ru/
 .SH AUTHORS
-3proxy is designed by 3APA3A
-.RI ( 3APA3A@security.nnov.ru ),
-Vladimir Dubrovin
-.RI ( vlad@sandy.ru )
+3proxy is designed by Vladimir 3APA3A Dubrovin
+.RI ( 3proxy@3proxy.ru )

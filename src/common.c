@@ -58,7 +58,12 @@ struct extparam conf = {
 	NULL, NULL,
 	NULL,
 	NULL,
-	0, -1, 0, 0, 0, 0, 0, 500, 0, 0, 0,
+#ifdef __FreeBSD__
+	8192, 
+#else
+	0,
+#endif
+	0, -1, 0, 0, 0, 0, 0, 500, 0, 0, 0, 0, 0,
 	6, 600,
 	1048576,
 	NULL, NULL,
@@ -84,7 +89,7 @@ struct extparam conf = {
 	NULL,
 	(time_t)0, (time_t)0,
 	0,0,
-	'@'
+	'@',
 };
 
 int numservers=0;
@@ -157,10 +162,10 @@ struct sockfuncs so = {
 #else
 	mypoll,
 #endif
-	send,
-	sendto,
-	recv,
-	recvfrom,
+	(void *)send,
+	(void *)sendto,
+	(void *)recv,
+	(void *)recvfrom,
 	shutdown,
 #ifdef _WIN32
 	closesocket
@@ -216,30 +221,34 @@ int ceparseargs(const char *str){
 
 #endif
 
-void parsehost(int family, char *host, struct sockaddr *sa){
+int parsehost(int family, unsigned char *host, struct sockaddr *sa){
 	char *sp=NULL,*se=NULL;
-	unsigned short port;
+	unsigned short port=0;
+	int ret = 0;
 
-	if(*host == '[') se=strchr(host, ']');
-	if ( (sp = strchr(se?se:host, ':')) ) *sp = 0;
+	if(!host) return 2;
+	if(*host == '[') se=strchr((char *)host, ']');
+	if ( (sp = strchr(se?se:(char *)host, ':')) && !strchr(sp+1, ':')) *sp = 0;
 	if(se){
 		*se = 0;
 	}
 	if(sp){
 		port = atoi(sp+1);
 	}
-	getip46(family, host + (se!=0), (struct sockaddr *)sa);
+	ret = !getip46(family, host + (se!=0), (struct sockaddr *)sa);
 	if(se) *se = ']';
 	if(sp) *sp = ':';
-	*SAPORT(sa) = htons(port);
+	if(port)*SAPORT(sa) = htons(port);
+	return ret;
 }
 
 int parsehostname(char *hostname, struct clientparam *param, unsigned short port){
 	char *sp=NULL,*se=NULL;
+	int ret = 0;
 
-	if(!hostname || !*hostname)return 1;
+	if(!hostname || !*hostname)return 2;
 	if(*hostname == '[') se=strchr(hostname, ']');
-	if ( (sp = strchr(se?se:hostname, ':')) ) *sp = 0;
+	if ( (sp = strchr(se?se:hostname, ':'))  && !strchr(sp+1, ':')) *sp = 0;
 	if(se){
 		*se = 0;
 	}
@@ -250,19 +259,19 @@ int parsehostname(char *hostname, struct clientparam *param, unsigned short port
 	if(sp){
 		port = atoi(sp+1);
 	}
-	getip46(param->srv->family, param->hostname, (struct sockaddr *)&param->req);
+	ret = !getip46(param->srv->family, param->hostname, (struct sockaddr *)&param->req);
 	if(se) *se = ']';
 	if(sp) *sp = ':';
 	*SAPORT(&param->req) = htons(port);
 	memset(&param->sinsr, 0, sizeof(param->sinsr));
-	return 0;
+	return ret;
 }
 
 int parseusername(char *username, struct clientparam *param, int extpasswd){
 	char *sb = NULL, *se = NULL, *sp = NULL;
 
 	if(!username || !*username) return 1;
-	if(!param->srv->nouser && (sb = strchr(username, ':')) && (se = strchr(sb + 1, ':')) && (!extpasswd || (sp = strchr(se + 1, ':')))){
+	if(param->srv->needuser && (sb = strchr(username, ':')) && (se = strchr(sb + 1, ':')) && (!extpasswd || (sp = strchr(se + 1, ':')))){
 		*sb = 0;
 		*se = 0;
 		if(sp) *sp = 0;
@@ -297,7 +306,7 @@ int parseconnusername(char *username, struct clientparam *param, int extpasswd, 
 	if(!username || !*username) return 1;
         if ((sb=strchr(username, conf.delimchar)) == NULL){
 		if(!param->hostname && param->remsock == INVALID_SOCKET) return 2;
-		if(param->hostname)parsehostname(param->hostname, param, port);
+		if(param->hostname)parsehostname((char *)param->hostname, param, port);
 		return parseusername(username, param, extpasswd);
 	}
 	while ((se=strchr(sb+1, conf.delimchar)))sb=se;
@@ -449,7 +458,7 @@ int dobuf2(struct clientparam * param, unsigned char * buf, const unsigned char 
 				 break;
 				case 'n':
 					len = param->hostname? (int)strlen((char *)param->hostname) : 0;
-					if (len > 0) for(len = 0; param->hostname[len] && i < 4000; len++, i++){
+					if (len > 0 && !strchr((char *)param->hostname, ':')) for(len = 0; param->hostname[len] && i < 4000; len++, i++){
 						buf[i] = param->hostname[len];
 					 	if(param->srv->nonprintable && (buf[i] < 0x20 || strchr((char *)param->srv->nonprintable, buf[i]))) buf[i] = param->srv->replace;
 						if(doublec && strchr((char *)doublec, buf[i])) {
@@ -466,7 +475,7 @@ int dobuf2(struct clientparam * param, unsigned char * buf, const unsigned char 
 					break;
 
 				case 'N':
-				 if(param->service >=0 && param->service < 15) {
+				 if(param->service < 15) {
 					 len = (conf.stringtable)? (int)strlen((char *)conf.stringtable[SERVICES + param->service]) : 0;
 					 if(len > 20) len = 20;
 					 memcpy(buf+i, (len)?conf.stringtable[SERVICES + param->service]:(unsigned char*)"-", (len)?len:1);
@@ -492,6 +501,9 @@ int dobuf2(struct clientparam * param, unsigned char * buf, const unsigned char 
 				 break;
 				case 'e':
 				 i += myinet_ntop(*SAFAMILY(&param->sinsl), SAADDR(&param->sinsl), (char *)buf + i, 64);
+				 break;
+				case 'i':
+				 i += myinet_ntop(*SAFAMILY(&param->sincl), SAADDR(&param->sincl), (char *)buf + i, 64);
 				 break;
 				case 'C':
 				 i += myinet_ntop(*SAFAMILY(&param->sincr), SAADDR(&param->sincr), (char *)buf + i, 64);
@@ -601,17 +613,11 @@ void lognone(struct clientparam * param, const unsigned char *s) {
 	if(param->trafcountfunc)(*param->trafcountfunc)(param);
 	clearstat(param);
 }
-pthread_mutex_t log_mutex;
-int logmutexinit = 0;
 unsigned char tmpbuf[8192];
 
 void logstdout(struct clientparam * param, const unsigned char *s) {
 	FILE *log;
 
-	if(!logmutexinit){
-		pthread_mutex_init(&log_mutex, NULL);
-		logmutexinit = 1;
-	}
 	pthread_mutex_lock(&log_mutex);
 	log = param->srv->stdlog?param->srv->stdlog:conf.stdlog?conf.stdlog:stdout;
 	dobuf(param, tmpbuf, s, NULL);
@@ -624,10 +630,6 @@ void logstdout(struct clientparam * param, const unsigned char *s) {
 #ifndef _WIN32
 void logsyslog(struct clientparam * param, const unsigned char *s) {
 
-	if(!logmutexinit){
-		pthread_mutex_init(&log_mutex, NULL);
-		logmutexinit = 1;
-	}
 	pthread_mutex_lock(&log_mutex);
 	dobuf(param, tmpbuf, s, NULL);
 	if(!param->nolog)syslog(LOG_INFO, "%s", tmpbuf);
@@ -636,7 +638,8 @@ void logsyslog(struct clientparam * param, const unsigned char *s) {
 #endif
 
 int doconnect(struct clientparam * param){
- SASIZETYPE size = sizeof(param->sinsr);
+ SASIZETYPE size;
+
 
  if (*SAFAMILY(&param->sincr) == *SAFAMILY(&param->req) && !memcmp(SAADDR(&param->sincr), SAADDR(&param->req), SAADDRLEN(&param->req)) &&
 	*SAPORT(&param->sincr) == *SAPORT(&param->req)) return 519;
@@ -644,11 +647,11 @@ int doconnect(struct clientparam * param){
  if (param->operation == ADMIN || param->operation == DNSRESOLVE || param->operation == BIND || param->operation == UDPASSOC)
 	return 0;
  if (param->remsock != INVALID_SOCKET){
+	size = sizeof(param->sinsr);
 	if(so._getpeername(param->remsock, (struct sockaddr *)&param->sinsr, &size)==-1) {return (15);}
  }
  else {
 	struct linger lg = {1,conf.timeouts[SINGLEBYTE_S]};
-	int opt = 1;
 
 	if(SAISNULL(&param->sinsr)){
 		if(SAISNULL(&param->req)) {
@@ -659,35 +662,49 @@ int doconnect(struct clientparam * param){
 	}
 	if(!*SAPORT(&param->sinsr))*SAPORT(&param->sinsr) = *SAPORT(&param->req);
 	if ((param->remsock=so._socket(SASOCK(&param->sinsr), SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {return (11);}
-	so._setsockopt(param->remsock, SOL_SOCKET, SO_LINGER, (unsigned char *)&lg, sizeof(lg));
-	so._setsockopt(param->remsock, SOL_SOCKET, SO_REUSEADDR, (unsigned char *)&opt, sizeof(int));
+	so._setsockopt(param->remsock, SOL_SOCKET, SO_LINGER, (char *)&lg, sizeof(lg));
+#ifdef REUSE
+	{
+		int opt;
 
-#ifndef NOIPV6
-	if(*SAFAMILY(&param->sinsr) == AF_INET6) memcpy(&param->sinsl, &param->srv->extsa6, sizeof(param->srv->extsa6));
-	else
+#ifdef SO_REUSEADDR
+		opt = 1;
+		so._setsockopt(param->remsock, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(int));
 #endif
-		memcpy(&param->sinsl, &param->srv->extsa, sizeof(param->srv->extsa));
-	if (param->srv->targetport && !*SAPORT(&param->sinsl) && ntohs(*SAPORT(&param->sincr)) > 1023) *SAPORT(&param->sinsl) = *SAPORT(&param->sincr);
-	if(so._bind(param->remsock, (struct sockaddr*)&param->sinsl, sizeof(param->sinsl))==-1) {
-		*SAPORT(&param->sinsl) = 0;
-		if(so._bind(param->remsock, (struct sockaddr*)&param->sinsl, sizeof(param->sinsl))==-1) {
-			return 12;
-		}
+#ifdef SO_REUSEPORT
+		opt = 1;
+		so._setsockopt(param->remsock, SOL_SOCKET, SO_REUSEPORT, (unsigned char *)&opt, sizeof(int));
+#endif
+	}
+#endif
+
+	if(SAISNULL(&param->sinsl)){
+#ifndef NOIPV6
+		if(*SAFAMILY(&param->sinsr) == AF_INET6) param->sinsl = param->srv->extsa6;
+		else
+#endif
+			param->sinsl = param->srv->extsa;
+	}
+	*SAPORT(&param->sinsl) = 0;
+	if(so._bind(param->remsock, (struct sockaddr*)&param->sinsl, SASIZE(&param->sinsl))==-1) {
+		return 12;
 	}
 	
 	if(param->operation >= 256 || (param->operation & CONNECT)){
 #ifdef _WIN32
 		unsigned long ul = 1;
 #endif
-		if(so._connect(param->remsock,(struct sockaddr *)&param->sinsr,sizeof(param->sinsr))) {return (13);}
+		if(so._connect(param->remsock,(struct sockaddr *)&param->sinsr,SASIZE(&param->sinsr))) {
+			return (13);
+		}
 		param->nconnects++;
 #ifdef _WIN32
 		ioctlsocket(param->remsock, FIONBIO, &ul);
 #else
 		fcntl(param->remsock,F_SETFL,O_NONBLOCK);
 #endif
-		size = sizeof(param->sinsl);
 	}
+	size = sizeof(param->sinsl);
 	if(so._getsockname(param->remsock, (struct sockaddr *)&param->sinsl, &size)==-1) {return (15);}
  }
  return 0;
@@ -817,11 +834,11 @@ unsigned long getip46(int family, unsigned char *name,  struct sockaddr *sa){
 	if(!name[i]){
 		if(ndots == 3 && ncols == 0 && nhex == 0){
 			*SAFAMILY(sa)=(family == 6)?AF_INET6 : AF_INET;
-			return inet_pton(*SAFAMILY(sa), name, SAADDR(sa))? *SAFAMILY(sa) : 0; 
+			return inet_pton(*SAFAMILY(sa), (char *)name, SAADDR(sa))? *SAFAMILY(sa) : 0; 
 		}
 		if(ncols >= 2) {
 			*SAFAMILY(sa)=AF_INET6;
-			return inet_pton(AF_INET6, name, SAADDR(sa))?(family==4? 0:AF_INET6) : 0;
+			return inet_pton(AF_INET6, (char *)name, SAADDR(sa))?(family==4? 0:AF_INET6) : 0;
 		}
 	}
 	if((tmpresolv = resolvfunc)){
@@ -836,10 +853,10 @@ unsigned long getip46(int family, unsigned char *name,  struct sockaddr *sa){
 	}
 	memset(&hint, 0, sizeof(hint));
 	hint.ai_family = (family == 6 || family == 64)?AF_INET6:AF_INET;
-	if (getaddrinfo(name, NULL, &hint, &ai)) {
+	if (getaddrinfo((char *)name, NULL, &hint, &ai)) {
 		if(family == 64 || family == 46){
 			hint.ai_family = (family == 64)?AF_INET:AF_INET6;
-			if (getaddrinfo(name, NULL, &hint, &ai)) return 0;
+			if (getaddrinfo((char *)name, NULL, &hint, &ai)) return 0;
 		}
 		else return 0;
 	}

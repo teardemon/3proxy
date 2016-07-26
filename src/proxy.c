@@ -14,49 +14,49 @@
 char * proxy_stringtable[] = {
 /* 0 */	"HTTP/1.0 400 Bad Request\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>400 Bad Request</title></head>\r\n"
 	"<body><h2>400 Bad Request</h2></body></html>\r\n",
 
 /* 1 */	"HTTP/1.0 502 Bad Gateway\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>502 Bad Gateway</title></head>\r\n"
 	"<body><h2>502 Bad Gateway</h2><h3>Host Not Found or connection failed</h3></body></html>\r\n",
 
 /* 2 */	"HTTP/1.0 503 Service Unavailable\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>503 Service Unavailable</title></head>\r\n"
 	"<body><h2>503 Service Unavailable</h2><h3>You have exceeded your traffic limit</h3></body></html>\r\n",
 
 /* 3 */	"HTTP/1.0 503 Service Unavailable\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>503 Service Unavailable</title></head>\r\n"
 	"<body><h2>503 Service Unavailable</h2><h3>Recursion detected</h3></body></html>\r\n",
 
 /* 4 */	"HTTP/1.0 501 Not Implemented\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>501 Not Implemented</title></head>\r\n"
 	"<body><h2>501 Not Implemented</h2><h3>Required action is not supported by proxy server</h3></body></html>\r\n",
 
 /* 5 */	"HTTP/1.0 502 Bad Gateway\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>502 Bad Gateway</title></head>\r\n"
 	"<body><h2>502 Bad Gateway</h2><h3>Failed to connect parent proxy</h3></body></html>\r\n",
 
 /* 6 */	"HTTP/1.0 500 Internal Error\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>500 Internal Error</title></head>\r\n"
 	"<body><h2>500 Internal Error</h2><h3>Internal proxy error during processing your request</h3></body></html>\r\n",
@@ -64,7 +64,7 @@ char * proxy_stringtable[] = {
 /* 7 */	"HTTP/1.0 407 Proxy Authentication Required\r\n"
 	"Proxy-Authenticate: Basic realm=\"proxy\"\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>407 Proxy Authentication Required</title></head>\r\n"
 	"<body><h2>407 Proxy Authentication Required</h2><h3>Access to requested resource disallowed by administrator or you need valid username/password to use this resource</h3></body></html>\r\n",
@@ -76,14 +76,14 @@ char * proxy_stringtable[] = {
 
 /* 10*/	"HTTP/1.0 404 Not Found\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>404 Not Found</title></head>\r\n"
 	"<body><h2>404 Not Found</h2><h3>File not found</body></html>\r\n",
 	
 /* 11*/	"HTTP/1.0 403 Forbidden\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>403 Access Denied</title></head>\r\n"
 	"<body><h2>403 Access Denied</h2><h3>Access control list denies you to access this resource</body></html>\r\n",
@@ -94,7 +94,7 @@ char * proxy_stringtable[] = {
 #endif
 	"Proxy-Authenticate: basic realm=\"proxy\"\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>407 Proxy Authentication Required</title></head>\r\n"
 	"<body><h2>407 Proxy Authentication Required</h2><h3>Access to requested resource disallowed by administrator or you need valid username/password to use this resource</h3></body></html>\r\n",
@@ -106,13 +106,13 @@ char * proxy_stringtable[] = {
 
 /* 14*/	"HTTP/1.0 403 Forbidden\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<pre>",
 
 /* 15*/	"HTTP/1.0 503 Service Unavailable\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>503 Service Unavailable</title></head>\r\n"
 	"<body><h2>503 Service Unavailable</h2><h3>Your request violates configured policy</h3></body></html>\r\n",
@@ -120,7 +120,7 @@ char * proxy_stringtable[] = {
 /* 16*/	"HTTP/1.0 401 Authentication Required\r\n"
 	"WWW-Authenticate: basic realm=\"FTP Server\"\r\n"
 	"Proxy-Connection: close\r\n"
-	"Content-type: text/html; charset=us-ascii\r\n"
+	"Content-type: text/html; charset=utf-8\r\n"
 	"\r\n"
 	"<html><head><title>401 FTP Server requires authentication</title></head>\r\n"
 	"<body><h2>401 FTP Server requires authentication</h2><h3>This FTP server rejects anonymous access</h3></body></html>\r\n",
@@ -131,8 +131,8 @@ char * proxy_stringtable[] = {
 	NULL
 };
 
-#define BUFSIZE 8192
 #define LINESIZE 4096
+#define BUFSIZE (LINESIZE*2)
 #define FTPBUFSIZE 1536
 
 static void logurl(struct clientparam * param, char * buf, char * req, int ftp){
@@ -152,7 +152,7 @@ static void logurl(struct clientparam * param, char * buf, char * req, int ftp){
 		strcpy(se, sb);
 	}
  }
- if(param->res != 555)(*param->srv->logfunc)(param, (unsigned char *)(req?buf:NULL));
+ if(param->res != 555 && param->res != 508)(*param->srv->logfunc)(param, (unsigned char *)(req?buf:NULL));
 }
 
 void decodeurl(unsigned char *s, int allowcr){
@@ -264,6 +264,9 @@ for(;;){
 		param->remsock = INVALID_SOCKET;
 		param->redirected = 0;
 		param->redirtype = 0;
+		memset(&param->sinsl, 0, sizeof(param->sinsl));
+		memset(&param->sinsr, 0, sizeof(param->sinsr));
+		memset(&param->req, 0, sizeof(param->req));
 	}
  }
 
@@ -284,6 +287,9 @@ for(;;){
 		param->remsock = INVALID_SOCKET;
 		param->redirected = 0;
 		param->redirtype = 0;
+		memset(&param->sinsl, 0, sizeof(param->sinsl));
+		memset(&param->sinsr, 0, sizeof(param->sinsr));
+		memset(&param->req, 0, sizeof(param->req));
 	}
 	myfree(req);
  }
@@ -293,6 +299,7 @@ for(;;){
 	RETURN(511);
  }
  if(buf[i-3] == '1') keepalive = 2; 
+ param->transparent = 0;
  if((isconnect = !strncasecmp((char *)buf, "CONNECT", 7))) keepalive = 2;
 
  if ((sb=(unsigned char *)(unsigned char *)strchr((char *)buf, ' ')) == NULL) {RETURN(512);}
@@ -327,7 +334,7 @@ for(;;){
 	prefix = (int)(se - buf);
 	su = (unsigned char*)strrchr((char *)sb, '@');
 	if(su) {
-		su = mystrdup(sb);
+		su = (unsigned char *)mystrdup((char *)sb);
 		decodeurl(su, 0);
 		parseconnusername((char *)su, (struct clientparam *)param, 1, (unsigned short)((ftp)?21:80));
 		myfree(su);
@@ -442,12 +449,16 @@ for(;;){
 		continue;
 	}
 	if(param->transparent && i > 6 && !strncasecmp((char *)buf + inbuf, "Host:", 5)){
+		unsigned char c;
 		sb = (unsigned char *)strchr((char *)(buf+inbuf), ':');
 		if(!sb)continue;
 		++sb;
 		while(isspace(*sb))sb++;
-		se = (unsigned char *)strchr((char *)sb, '\r');
-		if(se) *se = 0;
+		(se = (unsigned char *)strchr((char *)sb, '\r')) || (se = (unsigned char *)strchr((char *)sb, '\n'));
+		if(se) {
+			c = *se;
+			*se = 0;
+		}
 		if(!param->hostname){
 			parsehostname((char *)sb, param, 80);
 		}
@@ -459,7 +470,7 @@ for(;;){
 			myfree(req);
 			req = newbuf;
 		}
-		if(se)*se = '\r';
+		if(se)*se = c;
 	}
 	if(ftp && i > 13 && (!strncasecmp((char *)(buf+inbuf), "authorization", 13))){
 		sb = (unsigned char *)strchr((char *)(buf+inbuf), ':');
@@ -489,7 +500,7 @@ for(;;){
 		if(!sb)continue;
 		++sb;
 		while(isspace(*sb))sb++;
-		sscanf(sb, "%"PRINTF_INT64_MODIFIER"u",&contentlength64);
+		sscanf((char *)sb, "%"PRINTF_INT64_MODIFIER"u",&contentlength64);
 		if(param->maxtrafout64 && (param->maxtrafout64 < param->statscli64 || contentlength64 > param->maxtrafout64 - param->statscli64)){
 			RETURN(10);
 		}
@@ -509,7 +520,7 @@ for(;;){
 
  buf[inbuf] = 0;
 
- reqsize = (int)strlen(req);
+ reqsize = (int)strlen((char *)req);
  reqbufsize = reqsize + 1;
 
 #ifndef WITHMAIN
@@ -528,7 +539,7 @@ for(;;){
   uint64_t newlen64;
   newlen64 = sockfillbuffcli(param, (unsigned long)contentlength64, CONNECTION_S);
   if(newlen64 == contentlength64) {
-	action = handledatfltcli(param,  &param->clibuf, &param->clibufsize, 0, &param->cliinbuf);
+	action = handledatfltcli(param,  &param->clibuf, (int *)&param->clibufsize, 0, (int *)&param->cliinbuf);
 	if(action == HANDLED){
 		RETURN(0);
 	}
@@ -541,6 +552,7 @@ for(;;){
 
 #endif
 
+ if(param->srv->needuser > 1 && !param->username) {RETURN(4);}
  if((res = (*param->srv->authfunc)(param))) {RETURN(res);}
 
  if(ftp && param->redirtype != R_HTTP){
@@ -802,7 +814,8 @@ for(;;){
 
  else {
 	 redirect = 1;
-	 if(socksend(param->remsock, req , (res = (int)strlen((char *)req)), conf.timeouts[STRING_L]) != res) {
+	 res = (int)strlen((char *)req);
+	 if(socksend(param->remsock, req , res, conf.timeouts[STRING_L]) != res) {
 		RETURN(518);
 	 }
 	 param->statscli64 += res;
@@ -837,7 +850,7 @@ for(;;){
  if(keepalive <= 1) sprintf((char*)buf+strlen((char *)buf), "%s: %s\r\n", (param->redirtype == R_HTTP)?"Proxy-Connection":"Connection", keepalive? "keep-alive":"close");
  if(param->extusername){
 	sprintf((char*)buf + strlen((char *)buf), "%s: basic ", (redirect)?"Proxy-Authorization":"Authorization");
-	sprintf((char*)username, "%.128s:%.64s", param->extusername, param->extpassword?param->extpassword:(unsigned char*)"");
+	sprintf((char*)username, "%.128s:%.128s", param->extusername, param->extpassword?param->extpassword:(unsigned char*)"");
 	en64(username, buf+strlen((char *)buf), (int)strlen((char *)username));
 	sprintf((char*)buf + strlen((char *)buf), "\r\n");
  }
@@ -892,7 +905,7 @@ for(;;){
 		if(!sb)continue;
 		++sb;
 		while(isspace(*sb))sb++;
-		sscanf(sb, "%"PRINTF_INT64_MODIFIER"u", &contentlength64);
+		sscanf((char *)sb, "%"PRINTF_INT64_MODIFIER"u", &contentlength64);
 		hascontent = 1;
 		if(param->unsafefilter && param->ndatfilterssrv > 0) {
 			hascontent = 2;
@@ -908,7 +921,7 @@ for(;;){
 		if(!sb)continue;
 		++sb;
 		while(isspace(*sb))sb++;
-		if(!strncasecmp(sb, "chunked", 7)){
+		if(!strncasecmp((char *)sb, "chunked", 7)){
 			param->chunked = 1;
 		}
 	}
@@ -958,7 +971,7 @@ for(;;){
   uint64_t newlen;
   newlen = (uint64_t)sockfillbuffsrv(param, (unsigned long) contentlength64, CONNECTION_S);
   if(newlen == contentlength64) {
-	action = handledatfltsrv(param,  &param->srvbuf, &param->srvbufsize, 0, &param->srvinbuf);
+	action = handledatfltsrv(param,  &param->srvbuf, (int *)&param->srvbufsize, 0, (int *)&param->srvinbuf);
 	param->nolongdatfilter = 1;
 	if(action == HANDLED){
 		RETURN(0);
@@ -991,7 +1004,7 @@ for(;;){
  if((param->chunked || contentlength64 > 0) && param->operation != HTTP_HEAD && res != 204 && res != 304) {
  	do {
 		if(param->chunked){
-			char smallbuf[32];
+			unsigned char smallbuf[32];
 			while ((i = sockgetlinebuf(param, SERVER, smallbuf, 30, '\n', conf.timeouts[STRING_S])) == 2) {
 				if (socksend(param->clisock, smallbuf, i, conf.timeouts[STRING_S]) != i){
 					RETURN(533);
@@ -1014,7 +1027,7 @@ for(;;){
 			}
 			smallbuf[i] = 0;
 			contentlength64 = 0;
-			sscanf(smallbuf, "%"PRINTF_INT64_MODIFIER"x", &contentlength64);
+			sscanf((char *)smallbuf, "%"PRINTF_INT64_MODIFIER"x", &contentlength64);
 			if(contentlength64 == 0) {
 				param->chunked = 2;
 			}
@@ -1047,7 +1060,7 @@ REQUESTEND:
 	RETURN(0);
  }
  if(param->transparent && (!ckeepalive || !keepalive)) {RETURN (0);}
- logurl(param, buf, (char *)req, ftp);
+ logurl(param, (char *)buf, (char *)req, ftp);
  param->status = 0;
 
 }
@@ -1072,7 +1085,7 @@ CLEANRET:
 	else if(param->res >=30 && param->res < 80) {
 		socksend(param->clisock, (unsigned char *)proxy_stringtable[5], (int)strlen(proxy_stringtable[5]), conf.timeouts[STRING_S]);
 	}
-	else if(param->res == 1 || (param->srv->nouser && param->res < 10)) {
+	else if(param->res == 1 || (!param->srv->needuser && param->res < 10)) {
 		socksend(param->clisock, (unsigned char *)proxy_stringtable[11], (int)strlen(proxy_stringtable[11]), conf.timeouts[STRING_S]);
 	}
 	else if(param->res < 10) {
@@ -1094,7 +1107,7 @@ CLEANRET:
 		socksend(param->clisock, (unsigned char *)proxy_stringtable[0], (int)strlen(proxy_stringtable[0]), conf.timeouts[STRING_S]);
 	}
  } 
- logurl(param, buf, (char *)req, ftp);
+ logurl(param, (char *)buf, (char *)req, ftp);
  if(req)myfree(req);
  if(buf)myfree(buf);
  if(ftpbase)myfree(ftpbase);

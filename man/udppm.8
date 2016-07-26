@@ -1,4 +1,4 @@
-.TH udppm "8" "July 2009" "3proxy 0.7" "Universal proxy server"
+.TH udppm "8" "January 2016" "3proxy 0.8" "Universal proxy server"
 .SH NAME
 .B udppm
 \- UDP port mapper
@@ -46,6 +46,10 @@ Single packet. By default only one client can use udppm service, but
 if -s is specified only one packet will be forwarded between client and server.
 It allows to share service between multiple clients for single packet services
 (for example name lookups).
+.TP
+.B -S
+Increase or decrease stack size. You may want to try something like -S8192 if you experience 3proxy
+crashes.
 .SH ARGUMENTS
 .TP
 .I local_port
@@ -65,13 +69,11 @@ as a destination in client application. All datagrams are forwarded to
 .IR remote_host : remote_port
 .SH BUGS
 Report all bugs to
-.BR 3proxy@security.nnov.ru
+.BR 3proxy@3proxy.ru
 .SH SEE ALSO
 3proxy(8), proxy(8), ftppr(8), socks(8), pop3p(8), udppm(8), syslogd(8),
 .br
 http://3proxy.ru/
 .SH AUTHORS
-3proxy is designed by 3APA3A
-.RI ( 3APA3A@security.nnov.ru ),
-Vladimir Dubrovin
-.RI ( vlad@sandy.ru )
+3proxy is designed by Vladimir 3APA3A Dubrovin
+.RI ( 3proxy@3proxy.ru )

@@ -59,8 +59,8 @@ void __stdcall CommandHandler( DWORD dwCommand )
     case SERVICE_CONTROL_STOP:
     case SERVICE_CONTROL_SHUTDOWN:
         SetStatus( SERVICE_STOP_PENDING, 0, 1 );
-	conf.paused++;
 	conf.timetoexit = 1;
+	conf.paused++;
 	Sleep(2000);
         SetStatus( SERVICE_STOPPED, 0, 0 );
 #ifndef NOODBC
@@ -87,7 +87,7 @@ void __stdcall CommandHandler( DWORD dwCommand )
 void __stdcall ServiceMain(int argc, unsigned char* argv[] )
 {
 
-    hSrv = RegisterServiceCtrlHandler(conf.stringtable[1], (LPHANDLER_FUNCTION)CommandHandler);
+    hSrv = RegisterServiceCtrlHandler((LPCSTR)conf.stringtable[1], (LPHANDLER_FUNCTION)CommandHandler);
     if( hSrv == 0 ) return;
 
     SetStatus( SERVICE_START_PENDING, 0, 1 );
@@ -139,7 +139,7 @@ int timechanged (time_t oldtime, time_t newtime, ROTATION lt){
 	struct tm tmold;
 	struct tm *tm;
 	tm = localtime(&oldtime);
-	memcpy(&tmold, tm, sizeof(tmold));
+	tmold = *tm;
 	tm = localtime(&newtime);
 	switch(lt){
 		case MINUTELY:
@@ -192,6 +192,7 @@ void doschedule(void){
 
 void dumpcounters(struct trafcount *tlin, int counterd){
 
+ unsigned char tmpbuf[8192];
  struct trafcount *tl;
  if(counterd >= 0 && tlin) {
 
@@ -234,6 +235,7 @@ void dumpcounters(struct trafcount *tlin, int counterd){
 void cyclestep(void){
  struct tm *tm;
  time_t minutecounter;
+ unsigned char tmpbuf[8192];
 
  minutecounter = time(0);
  for(;;){
@@ -362,6 +364,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 #ifdef _WIN32
   unsigned char * arg;
   WSADATA wd;
+  unsigned char tmpbuf[8192];
 
   WSAStartup(MAKEWORD( 1, 1 ), &wd);
   osv.dwOSVersionInfoSize = sizeof(osv);
@@ -394,7 +397,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 			"By clicking Yes you confirm you read and accepted License Agreement.\n"
 			"You can use Administration/Services to control %s service.", 
 			conf.stringtable[1], conf.stringtable[2]);
-	if(MessageBox(NULL, (char *)tmpbuf, conf.stringtable[2], MB_YESNO|MB_ICONASTERISK) != IDYES) return 1;
+	if(MessageBox(NULL, (LPCSTR)tmpbuf, (LPCSTR)conf.stringtable[2], MB_YESNO|MB_ICONASTERISK) != IDYES) return 1;
 
 	
 	*tmpbuf = '\"';
@@ -415,7 +418,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 			perror("Failed to open Service Manager");
 			RETURN(101);
 		}
-		if (!(sch = CreateService(sch, conf.stringtable[1], conf.stringtable[2], GENERIC_EXECUTE, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, (char *)tmpbuf, NULL, NULL, NULL, NULL, NULL))){
+		if (!(sch = CreateService(sch, (LPCSTR)conf.stringtable[1], (LPCSTR)conf.stringtable[2], GENERIC_EXECUTE, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, (char *)tmpbuf, NULL, NULL, NULL, NULL, NULL))){
 			perror("Failed to create service");
 			RETURN(103);
 		}
@@ -436,10 +439,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 			RETURN(104);
 		}
 		if(RegSetValueEx(  runsrv,
-				conf.stringtable[1],
+				(LPCSTR)conf.stringtable[1],
 				0,
 				REG_EXPAND_SZ,
-				(char *)tmpbuf,
+				(BYTE *)tmpbuf,
 				(int)strlen((char *)tmpbuf)+1)!=ERROR_SUCCESS){
 			perror("Failed to set registry value");
 			RETURN(105);
@@ -457,7 +460,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 			perror("Failed to open Service Manager\n");
 			RETURN(106);
 		}
-		if (!(sch = OpenService(sch, conf.stringtable[1], DELETE))){
+		if (!(sch = OpenService(sch, (LPCSTR)conf.stringtable[1], DELETE))){
 			perror("Failed to open service");
 			RETURN(107);
 		}
@@ -476,7 +479,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 			perror("Failed to open registry");
 			RETURN(109);
 		}
-		if(RegDeleteValue(runsrv, conf.stringtable[1]) != ERROR_SUCCESS){
+		if(RegDeleteValue(runsrv, (LPCSTR)conf.stringtable[1]) != ERROR_SUCCESS){
 			perror("Failed to clear registry");
 			RETURN(110);
 		}
@@ -510,17 +513,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
 	return 1;
   }
 
-  pthread_mutex_init(&log_mutex, NULL);
-  logmutexinit = 1;
-
   pthread_mutex_init(&config_mutex, NULL);
   pthread_mutex_init(&bandlim_mutex, NULL);
   pthread_mutex_init(&hash_mutex, NULL);
   pthread_mutex_init(&tc_mutex, NULL);
   pthread_mutex_init(&pwl_mutex, NULL);
+  pthread_mutex_init(&log_mutex, NULL);
 
   freeconf(&conf);
   res = readconfig(fp);
+  conf.version++;
 
   if(res) RETURN(res);
   if(!writable)fclose(fp);
@@ -531,7 +533,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int 
   if(service){
 	SERVICE_TABLE_ENTRY ste[] = 
 	{
-        	{ conf.stringtable[1], (LPSERVICE_MAIN_FUNCTION)ServiceMain},
+        	{ (LPSTR)conf.stringtable[1], (LPSERVICE_MAIN_FUNCTION)ServiceMain},
 	        { NULL, NULL }
 	};	
  	if(!StartServiceCtrlDispatcher( ste ))cyclestep();
